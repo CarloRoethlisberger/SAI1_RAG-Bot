@@ -69,6 +69,8 @@ class BookAnswerResponse(BaseModel):
 class QuizRequest(BaseModel):
     book_id: str
     num_questions: int = 5
+    instruction: str | None = None  # optionaler Kontext für die Fragen
+
 
 
 class QuizCard(BaseModel):
@@ -159,12 +161,18 @@ def ask_book(req: BookQuestionRequest):
 @app.post("/quiz", response_model=QuizResponse)
 def quiz_endpoint(req: QuizRequest):
     try:
-        cards_data = generate_quiz(client, req.book_id, req.num_questions)
+        cards_data = generate_quiz(
+            client,
+            req.book_id,
+            req.num_questions,
+            instruction=req.instruction,
+        )
         cards = [QuizCard(**c) for c in cards_data]
         return QuizResponse(cards=cards)
     except Exception as e:
         print("Fehler in /quiz:", e)
         raise HTTPException(status_code=500, detail="Fehler beim Erzeugen des Quiz")
+
 
 
 # -----------------------------

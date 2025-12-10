@@ -12,10 +12,14 @@ interface QuizResponse {
   cards: QuizCard[];
 }
 
+type QuizMode = "random" | "focused";
+
 const QuizSection = () => {
   const [books, setBooks] = useState<string[]>([]);
   const [selectedBook, setSelectedBook] = useState<string>("");
   const [numQuestions, setNumQuestions] = useState<number>(5);
+  const [mode, setMode] = useState<QuizMode>("random");
+  const [instruction, setInstruction] = useState<string>(""); // optionaler Kontext
   const [cards, setCards] = useState<QuizCard[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,6 +51,12 @@ const QuizSection = () => {
       return;
     }
 
+    // Wenn fokussierter Modus, aber kein Text → kurze Hilfe
+    if (mode === "focused" && !instruction.trim()) {
+      setError("Bitte einen Hinweis/Thema für die Fragen eingeben oder den Zufallsmodus wählen.");
+      return;
+    }
+
     setLoading(true);
     setError(null);
     setCards([]);
@@ -60,6 +70,7 @@ const QuizSection = () => {
         body: JSON.stringify({
           book_id: selectedBook,
           num_questions: numQuestions,
+          instruction: mode === "focused" ? instruction.trim() : null,
         }),
       });
 
@@ -109,14 +120,64 @@ const QuizSection = () => {
         </label>
       </div>
 
-      <button className="primary-button" onClick={handleGenerateQuiz} disabled={loading}>
+      {/* Modus: Zufällig vs. mit Kontext */}
+      <div className="field-row" style={{ marginTop: "1rem" }}>
+        <span className="field-label" style={{ marginRight: "1rem" }}>
+          Fragetyp:
+        </span>
+
+        <label style={{ marginRight: "1rem" }}>
+          <input
+            type="radio"
+            name="quiz-mode"
+            value="random"
+            checked={mode === "random"}
+            onChange={() => setMode("random")}
+          />{" "}
+          Zufällige Fragen zum Buch
+        </label>
+
+        <label>
+          <input
+            type="radio"
+            name="quiz-mode"
+            value="focused"
+            checked={mode === "focused"}
+            onChange={() => setMode("focused")}
+          />{" "}
+          Gezielte Fragen mit Kontext
+        </label>
+      </div>
+
+      {/* Kontext-Eingabefeld, nur im fokussierten Modus aktiv */}
+      <div className="field-row" style={{ marginTop: "0.75rem" }}>
+        <label className="field-label" style={{ width: "100%" }}>
+          Thema / Hinweis für die Fragen (optional, wenn fokussierter Modus):
+          <input
+            className="text-input"
+            type="text"
+            placeholder="z.B. Stelle mir Fragen über die Personen"
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            disabled={mode === "random"}
+            style={{ width: "100%", marginTop: "0.25rem" }}
+          />
+        </label>
+      </div>
+
+      <button
+        className="primary-button"
+        onClick={handleGenerateQuiz}
+        disabled={loading}
+        style={{ marginTop: "1rem" }}
+      >
         {loading ? "Quiz wird erstellt..." : "Quiz erstellen"}
       </button>
 
       {error && <p className="error-text">{error}</p>}
 
       {cards.length > 0 && (
-        <div className="output-box">
+        <div className="output-box" style={{ marginTop: "1.5rem" }}>
           <h3>Quizkarten</h3>
           <ul className="quiz-list">
             {cards.map((card, idx) => (
