@@ -93,3 +93,24 @@ def retrieve_context(book_id: str, question: str, k: int = 5) -> List[str]:
     # Chroma gibt eine Liste von Listen zurück
     documents = results["documents"][0]
     return documents
+
+
+def get_all_chunks(book_id: str) -> List[str]:
+    """
+    Holt alle gespeicherten Text-Chunks für ein Buch aus Chroma.
+    Falls die Collection noch leer ist, wird zuerst indexiert.
+    """
+    collection = _get_collection(book_id)
+
+    if collection.count() == 0:
+        index_book(book_id)
+
+    results = collection.get(include=["documents"])
+    docs_lists = results.get("documents", [])
+
+    # docs_lists ist eine Liste von Listen → wir flatten sie
+    chunks: List[str] = []
+    for lst in docs_lists:
+        chunks.extend(lst)
+
+    return chunks

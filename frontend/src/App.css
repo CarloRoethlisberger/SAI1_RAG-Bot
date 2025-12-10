@@ -1,73 +1,207 @@
-/* Layout */
-.container {
-  padding: 2rem;
-  font-family: sans-serif;
-  max-width: 900px;
-  margin: 0 auto;
+/* Gesamt-Layout */
+
+.app-root {
+  min-height: 100vh;
+  background: linear-gradient(#f4f6f9, #e7ecf3);
+  padding: 2.5rem;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #111;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Sections */
-.card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  padding: 1.2rem;
-  margin-bottom: 2rem;
-  background: #fff;
+/* Header */
+
+.app-header {
+  text-align: center;
+  margin-bottom: 2.5rem;
 }
 
-/* Inputs */
-.textarea {
+.app-header h1 {
+  margin: 0;
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+.app-header p {
+  margin-top: 0.35rem;
+  color: #555;
+  font-size: 1.1rem;
+}
+
+/* Grid Layout */
+
+.app-main {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 2rem;
   width: 100%;
-  min-height: 80px;
-  font-family: inherit;
-  padding: 0.5rem;
+}
+
+
+
+/* Card */
+
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 1.75rem;
+  min-height: 380px; /* wichtig: sichtbar auch leer */
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.card h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #111;
+}
+
+/* Forms */
+
+.field-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
   margin-bottom: 0.75rem;
 }
 
-.input {
-  width: 200px;
-  font-family: inherit;
-  padding: 0.3rem;
-  margin-left: 0.5rem;
+.field-label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  color: #222;
+}
+
+/* Textareas & Inputs */
+
+.text-input,
+.number-input,
+.select-input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font: inherit;
+  background: #fff;
+  color: #111;
+}
+
+.text-input {
+  resize: vertical;
+  min-height: 90px;
+}
+
+.number-input {
+  max-width: 120px;
+}
+
+.file-input {
+  font: inherit;
+  margin-bottom: 0.5rem;
 }
 
 /* Buttons */
-.button {
-  padding: 0.5rem 1rem;
-  font-size: 0.95rem;
-  background: #4c8bf5;
+
+.primary-button {
+  padding: 0.6rem 1.35rem;
+  border-radius: 10px;
   border: none;
-  color: white;
-  border-radius: 4px;
   cursor: pointer;
+  background: #1c1f2e;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-top: 0.75rem;
+  transition: 0.15s ease;
 }
 
-.button:disabled {
-  background: grey;
+.primary-button:hover:not(:disabled) {
+  background: #313647;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
+}
+
+.primary-button:disabled {
+  opacity: 0.6;
   cursor: not-allowed;
 }
 
-/* Output box */
-.output {
-  margin-top: 1rem;
-  padding: 1rem;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  background: black;
+/* Output Box */
+
+.output-box {
+  margin-top: 1.25rem;
+  padding: 1rem 1.2rem;
+  background: #f9fafb;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  color: #111;
 }
 
-/* Context chunks */
-.chunk {
-  padding: 0.5rem;
-  margin-bottom: 0.75rem;
-  background: black;
-  border: 1px solid #eee;
-  border-radius: 4px;
+.output-text {
+  line-height: 1.55;
   white-space: pre-wrap;
 }
 
-/* Errors */
-.error {
-  color: red;
+/* Kontextliste */
+
+.context-list {
+  list-style: none;
+  padding-left: 0;
+  margin-top: 0.75rem;
+}
+
+.context-chunk {
+  white-space: pre-wrap;
+  background: #fff;
+  border: 1px solid #ddd;
+  padding: 0.75rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  font-size: 0.9rem;
+}
+
+/* Quiz Karten */
+
+.quiz-list {
+  list-style: none;
+  padding-left: 0;
   margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1rem;
+}
+
+.quiz-card {
+  background: #ffffff;
+  border: 1px solid #e3e5e8;
+  border-radius: 10px;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+}
+
+.quiz-question {
+  font-weight: 600;
+  margin-bottom: 0.4rem;
+}
+
+.quiz-answer {
+  color: #333;
+}
+
+/* Info / Error texts */
+
+.error-text {
+  margin-top: 0.75rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+.success-text {
+  margin-top: 0.75rem;
+  color: #059669;
+  font-weight: 500;
 }

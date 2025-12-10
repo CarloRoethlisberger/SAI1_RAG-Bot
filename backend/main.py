@@ -1,20 +1,34 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from dotenv import load_dotenv
-from openai import OpenAI
+# backend/main.py
+
 import os
+from pathlib import Path
 from typing import List
+
+from dotenv import load_dotenv
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
+from pydantic import BaseModel
+
 from rag import retrieve_context, index_book
+from summary import generate_summary
+from quiz import generate_quiz
+from upload import save_book_file
 
 
+# .env laden
 load_dotenv()
 api_key = os.getenv("OPENAI_API_KEY")
 
-# Wenn kein API-Key gesetzt ist, nutzen wir einen Dummy-Client
-client = OpenAI(api_key=api_key) if api_key else None
+if not api_key:
+    raise RuntimeError("OPENAI_API_KEY ist nicht gesetzt (.env prüfen)")
 
-app = FastAPI()
+client = OpenAI(api_key=api_key)
+
+app = FastAPI(
+    title="AI Reading Assistant",
+    description="Backend für Summary, Buchfragen (RAG) und Quiz",
+)
 
 # Buch "faust" beim Start einmal indexieren
 index_book("faust")
@@ -29,17 +43,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# HEALTH CHECK
-@app.get("/health")
-def health():
-    return {"status": "ok"}
 
-# MODELS
+# -----------------------------
+# Pydantic Modelle
+# -----------------------------
+
 class SummaryRequest(BaseModel):
     text: str
 
+
 class SummaryResponse(BaseModel):
     summary: str
+
 
 class BookQuestionRequest(BaseModel):
     book_id: str  # z.B. "faust"
@@ -51,64 +66,145 @@ class BookAnswerResponse(BaseModel):
     context: List[str]
 
 
-# SUMMARY ENDPOINT
+class QuizRequest(BaseModel):
+    book_id: str
+    num_questions: int = 5
+
+
+class QuizCard(BaseModel):
+    question: str
+    answer: str
+
+
+class QuizResponse(BaseModel):
+    cards: List[QuizCard]
+
+
+class UploadBookResponse(BaseModel):
+    book_id: str
+    message: str
+
+
+# -----------------------------
+# Health Check
+# -----------------------------
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+
+# -----------------------------
+# Summary Endpoint
+# -----------------------------
+
 @app.post("/summary", response_model=SummaryResponse)
 def summary_endpoint(req: SummaryRequest):
-    # Falls kein API-Key vorhanden ist oder OpenAI nicht konfiguriert → Dummy-Summary
-    if client is None:
-        print("WARNUNG: Kein OPENAI_API_KEY gesetzt – benutze Dummy-Summary.")
-        return SummaryResponse(summary=f"(Dummy-Summary) {req.text[:150]}...")
-
     try:
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            max_tokens=200,
-            messages=[
-                {"role": "system", "content": "You generate concise summaries of text. Only answer from provided context. If no information is available, say: 'Ich weiss es nicht'."},
-                {"role": "user", "content": req.text},
-            ],
-        )
-        # bei neuer OpenAI-Bibliothek:
-        result = completion.choices[0].message.content
+        result = generate_summary(client, req.text)
         return SummaryResponse(summary=result)
     except Exception as e:
-        # Fallback, damit das Frontend NIE leer bleibt
-        print("Fehler bei OpenAI:", e)
-        return SummaryResponse(summary=f"(Fallback-Summary wegen Fehler) {req.text[:150]}...")
+        print("Fehler bei generate_summary:", e)
+        return SummaryResponse(summary="(Fallback-Summary wegen Fehler)")
+
+
+# -----------------------------
+# RAG: Fragen zum Buch
+# -----------------------------
 
 @app.post("/ask_book", response_model=BookAnswerResponse)
 def ask_book(req: BookQuestionRequest):
-    # 1) relevante Textstellen aus der Vektordatenbank holen
-    context_chunks = retrieve_context(req.book_id, req.question, k=5)
-    context_text = "\n\n---\n\n".join(context_chunks)
+    try:
+        # 1) relevante Textstellen aus der Vektordatenbank holen
+        context_chunks = retrieve_context(req.book_id, req.question, k=5)
+        context_text = "\n\n---\n\n".join(context_chunks)
 
-    # 2) LLM mit Kontext anfragen
-    completion = client.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "Du bist ein hilfreicher Tutor für Literatur. "
-                    "Beantworte Fragen NUR anhand des folgenden Buch-Kontexts. "
-                    "Wenn du es nicht weisst, sage: 'Ich weiss es nicht'."
-                ),
-            },
-            {
-                "role": "user",
-                "content": (
-                    f"Kontext aus dem Buch (Ausschnitte):\n{context_text}\n\n"
-                    f"Frage: {req.question}"
-                ),
-            },
-        ],
-    )
+        # 2) LLM mit Kontext anfragen
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "Du bist ein hilfreicher Tutor für Literatur. "
+                        "Beantworte Fragen NUR anhand des folgenden Buch-Kontexts. "
+                        "Wenn du es nicht weisst, sage: 'Ich weiss es nicht'."
+                    ),
+                },
+                {
+                    "role": "user",
+                    "content": (
+                        f"Kontext aus dem Buch (Ausschnitte):\n{context_text}\n\n"
+                        f"Frage: {req.question}"
+                    ),
+                },
+            ],
+        )
 
-    # gleiche Art wie in deinem /summary-Endpoint
-    answer_text = completion.choices[0].message.content
+        answer_text = completion.choices[0].message.content
+
+        return BookAnswerResponse(
+            answer=answer_text,
+            context=context_chunks,
+        )
+    except Exception as e:
+        print("Fehler in /ask_book:", e)
+        raise HTTPException(status_code=500, detail="Fehler beim Beantworten der Buchfrage")
 
 
-    return BookAnswerResponse(
-        answer=answer_text,
-        context=context_chunks,
-    )
+# -----------------------------
+# Quiz Endpoint
+# -----------------------------
+
+@app.post("/quiz", response_model=QuizResponse)
+def quiz_endpoint(req: QuizRequest):
+    try:
+        cards_data = generate_quiz(client, req.book_id, req.num_questions)
+        cards = [QuizCard(**c) for c in cards_data]
+        return QuizResponse(cards=cards)
+    except Exception as e:
+        print("Fehler in /quiz:", e)
+        raise HTTPException(status_code=500, detail="Fehler beim Erzeugen des Quiz")
+
+
+# -----------------------------
+# Buch-Upload Endpoint
+# -----------------------------
+
+@app.post("/upload_book", response_model=UploadBookResponse)
+async def upload_book(file: UploadFile = File(...)):
+    if not file.filename.lower().endswith(".txt"):
+        raise HTTPException(status_code=400, detail="Nur .txt-Dateien sind erlaubt.")
+
+    try:
+        content_bytes = await file.read()
+        content = content_bytes.decode("utf-8", errors="ignore")
+
+        # Buch-ID aus Dateiname (ohne .txt)
+        book_id = Path(file.filename).stem
+
+        save_book_file(book_id, content)
+
+        return UploadBookResponse(
+            book_id=book_id,
+            message=f"Buch '{book_id}' gespeichert und indexiert.",
+        )
+    except Exception as e:
+        print("Fehler in /upload_book:", e)
+        raise HTTPException(status_code=500, detail="Fehler beim Hochladen des Buches")
+    
+
+@app.get("/books", response_model=List[str])
+def list_books():
+    """
+    Gibt eine Liste aller verfügbaren Buch-IDs zurück.
+    Grundlage sind alle .txt-Dateien im Ordner backend/data.
+    Beispiel: ["faust", "mein_buch", ...]
+    """
+    data_dir = Path(__file__).parent / "data"
+    if not data_dir.exists():
+        return []
+
+    book_ids = [p.stem for p in data_dir.glob("*.txt")]
+    return sorted(book_ids)
+
