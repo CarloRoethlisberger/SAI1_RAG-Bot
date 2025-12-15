@@ -44,7 +44,7 @@ Further, the Application currently only supports the UI in German.
 
 ---
 
-### Setup instructions
+### 🤖 Setup instructions
 
 **Pre-Reqs:**
 - Git (CMD: winget install --id Git.Git)
