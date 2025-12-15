@@ -54,7 +54,6 @@ Further, the Application currently only supports the UI in German.
 
 Terminal (PS):
 1. git clone https://github.com/CarloRoethlisberger/SAI1_RAG-Bot.git
-
 2. cd SAI1_RAG-Bot
 3. cd backend
 4. python -m venv venv
@@ -63,16 +62,15 @@ Terminal (PS):
 7. python.exe -m pip install --upgrade pip
 8. pip install fastapi uvicorn "uvicorn[standard]" chromadb sentence-transformers openai httpx python-dotenv
 9. pip install python-multipart
-
-11. In the Root of the project, cerate a new file ".env"
-12. Copy past the the OpenAI API key from our report and save the .env file
+10. In the Root of the project, cerate a new file ".env"
+11. Copy paste the OpenAI API key from our report and save the .env file
 
 OPENAI_API_KEY=[Your_Key]
 
 (Not uploading the .env/API key is best practice)
 
-13. python -m uvicorn main:app --reload
-14. The backend is now running. Now open a new terminal and do not close the current terminal. 
+12. python -m uvicorn main:app --reload
+13. The backend is now running. Now open a new terminal and do not close the current terminal. 
 
 ---
 
