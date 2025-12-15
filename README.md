@@ -44,7 +44,7 @@ Further, the Application currently only supports the UI in German.
 
 ---
 
-### How to start up the prototype
+### Setup instructions
 
 **Pre-Reqs:**
 - Git (CMD: winget install --id Git.Git)
@@ -72,11 +72,13 @@ OPENAI_API_KEY=[Your_Key]
 (Not uploading the .env/API key is best practice)
 
 13. python -m uvicorn main:app --reload
+14. The backend is now running. Now open a new terminal and do not close the current terminal. 
 
-The backend is now running. Now open a new terminal and do not close the current terminal. 
+---
+
 
 **Frontend**
-2. cd frontend
-3. npm install
-4. npm run dev
-5. Visit the displayed localhost URL in the browser
+1. cd frontend
+2. npm install
+3. npm run dev
+4. Visit the displayed localhost URL in the browser
