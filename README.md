@@ -2,9 +2,10 @@
 
 # AI Reading Assistant (RAG + Project Gutenberg)
   
-This project combines **Project Gutenberg** texts with an **AI Reading Assistant** that can **summarize**, **answer questions grounded in the book (RAG)**, and **generate quizzes**.
+This project combines **Project Gutenberg** texts with an **AI Reading Assistant** that can **summarize**, **answer questions grounded in the book (RAG)**, and **generate quizzes**. Project Gutenberg is one of the oldest and largest free digital libraries in the world.
+The project provides public domain books free of charge as full-text digital files. The works may be freely read, stored, shared, and processed.
 
-Please be aware that this is a prototype and thus not yet dockerized or hosted. You will need to clone the repo and start the application manually. 
+‼️Please be aware that this is a prototype and thus not yet dockerized or hosted. You will need to clone the repository, install some pre-reqs and start the application manually.‼️
 
 Further, the Application currently only supports the UI in German. 
 
@@ -13,7 +14,7 @@ Further, the Application currently only supports the UI in German.
 ## ✨ Features
 
 ### 📖 Reading & Learning Tools
-- **Free summary**: paste any text and get a summary
+- **Summary**: paste any text and get a summary
 - **Book Q&A (RAG)**: ask questions and get answers **based only on the retrieved book passages**
 - **Quiz generator**: create flashcard-style Q&A pairs from a selected book
 
@@ -64,8 +65,7 @@ Terminal (PS):
 9. pip install python-multipart
 10. In the Root of the project, cerate a new file ".env"
 11. Copy paste the OpenAI API key from our report and save the .env file
-
-OPENAI_API_KEY=[Your_Key]
+    You will find it in **chapter 4.7**
 
 (Not uploading the .env/API key is best practice)
 
@@ -73,7 +73,6 @@ OPENAI_API_KEY=[Your_Key]
 13. The backend is now running. Now open a new terminal and do not close the current terminal. 
 
 ---
-
 
 **Frontend**
 1. cd frontend
