@@ -1,8 +1,9 @@
 # backend/main.py
 
 import os
+import httpx
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -84,6 +85,29 @@ class QuizResponse(BaseModel):
 
 class UploadBookResponse(BaseModel):
     book_id: str
+    message: str
+
+class GutenbergBook(BaseModel):
+    id: int
+    title: str
+    authors: List[str]
+    text_url: Optional[str] = None
+
+
+class GutenbergSearchResponse(BaseModel):
+    books: List[GutenbergBook]
+
+
+class GutenbergImportRequest(BaseModel):
+    gutenberg_id: int
+    book_id: Optional[str] = None
+
+
+class GutenbergImportResponse(BaseModel):
+    book_id: str
+    title: str
+    authors: List[str]
+    char_count: int
     message: str
 
 
@@ -192,6 +216,7 @@ async def upload_book(file: UploadFile = File(...)):
         book_id = Path(file.filename).stem
 
         save_book_file(book_id, content)
+        index_book(book_id)
 
         return UploadBookResponse(
             book_id=book_id,
@@ -216,3 +241,87 @@ def list_books():
     book_ids = [p.stem for p in data_dir.glob("*.txt")]
     return sorted(book_ids)
 
+
+# -----------------------------
+# Gutenberg
+# -----------------------------
+
+@app.get("/gutenberg/search", response_model=GutenbergSearchResponse)
+async def gutenberg_search(query: str):
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as http:
+            r = await http.get(
+                "https://gutendex.com/books/",
+                params={"search": query},
+            )
+            r.raise_for_status()
+            data = r.json()
+
+        books: List[GutenbergBook] = []
+        for b in data.get("results", [])[:10]:
+            formats = b.get("formats", {})
+            text_url = (
+                formats.get("text/plain; charset=utf-8")
+                or formats.get("text/plain; charset=us-ascii")
+                or formats.get("text/plain")
+                or next(
+                    (
+                        u
+                        for u in formats.values()
+                        if isinstance(u, str) and u.endswith(".txt")
+                    ),
+                    None,
+                )
+            )
+
+            books.append(
+                GutenbergBook(
+                    id=b.get("id"),
+                    title=b.get("title", "Unknown Title"),
+                    authors=[a.get("name", "Unknown") for a in b.get("authors", [])],
+                    text_url=text_url,
+                )
+            )
+
+        return GutenbergSearchResponse(books=books)
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error searching Gutenberg: {str(e)}",
+        )
+
+
+@app.post("/gutenberg/import", response_model=GutenbergImportResponse)
+async def gutenberg_import(req: GutenbergImportRequest):
+    async with httpx.AsyncClient(timeout=60.0, follow_redirects=True) as http:
+        meta_r = await http.get(f"https://gutendex.com/books/{req.gutenberg_id}/")
+        meta_r.raise_for_status()
+        meta = meta_r.json()
+
+        formats = meta.get("formats", {})
+        text_url = (
+            formats.get("text/plain; charset=utf-8")
+            or formats.get("text/plain; charset=us-ascii")
+            or formats.get("text/plain")
+            or next((u for u in formats.values() if isinstance(u, str) and u.endswith(".txt")), None)
+        )
+        if not text_url:
+            raise HTTPException(status_code=404, detail="No plain-text format available for this book.")
+
+        txt_r = await http.get(text_url)
+        txt_r.raise_for_status()
+        text = txt_r.text
+
+    book_id = req.book_id or f"gutenberg_{req.gutenberg_id}"
+
+    save_book_file(book_id, text)
+    index_book(book_id)  # indexes into Chroma
+
+    return GutenbergImportResponse(
+        book_id=book_id,
+        title=meta.get("title", "Unknown Title"),
+        authors=[a.get("name", "Unknown") for a in meta.get("authors", [])],
+        char_count=len(text),
+        message=f"Gutenberg book imported, saved, and indexed as '{book_id}'.",
+    )

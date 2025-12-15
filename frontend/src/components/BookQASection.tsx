@@ -18,25 +18,30 @@ const BookQASection = () => {
   const [error, setError] = useState<string | null>(null);
 
   // Bücherliste vom Backend holen
+ 
+  
   useEffect(() => {
-    async function fetchBooks() {
-      try {
-        const res = await fetch(`${API_BASE}/books`);
-        if (!res.ok) {
-          throw new Error("Fehler beim Laden der Bücherliste");
-        }
-        const data: string[] = await res.json();
-        setBooks(data);
-        if (data.length > 0) {
-          setSelectedBook(data[0]); // erstes Buch als Default
-        }
-      } catch (err: any) {
-        setError(err.message ?? "Fehler beim Laden der Bücherliste");
-      }
-    }
+  async function fetchBooks() {
+    try {
+      const res = await fetch(`${API_BASE}/books`);
+      if (!res.ok) throw new Error("Fehler beim Laden der Bücherliste");
+      const data: string[] = await res.json();
+      setBooks(data);
 
-    fetchBooks();
-  }, []);
+      // keep current selection if it still exists, else pick first
+      setSelectedBook((prev) => (prev && data.includes(prev) ? prev : (data[0] ?? "")));
+    } catch (err: any) {
+      setError(err.message ?? "Fehler beim Laden der Bücherliste");
+    }
+  }
+
+  fetchBooks(); // initial load
+
+  const onBooksUpdated = () => fetchBooks();
+  window.addEventListener("books-updated", onBooksUpdated);
+
+  return () => window.removeEventListener("books-updated", onBooksUpdated);
+}, []);
 
   async function handleAsk() {
     if (!selectedBook) {

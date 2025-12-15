@@ -237,3 +237,74 @@
   padding: 0.6rem 0.75rem;
   border-radius: 10px;
 }
+
+/* ===== Layout Root ===== */
+.layout-root {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ===== Layout: Sidebar + Content ===== */
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+}
+
+/* Full-height left bar */
+.sidebar {
+  width: 320px;
+  background: #1f232b; /* dark grey */
+  color: rgba(255, 255, 255, 0.92);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  flex-shrink: 0;
+  box-shadow: 6px 0 18px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-inner {
+  padding: 1.5rem;
+}
+
+.sidebar h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.15rem;
+  letter-spacing: 0.2px;
+}
+
+.sidebar p {
+  margin: 0;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 0.95rem;
+}
+
+/* Optional callout box inside sidebar */
+.sidebar-box {
+  margin-top: 1.25rem;
+  padding: 0.9rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  font-size: 0.95rem;
+}
+
+/* Right side */
+.content {
+  flex: 1;
+  min-width: 0; /* prevents overflow issues */
+}
+
+/* Responsive: sidebar becomes top block on small screens */
+@media (max-width: 900px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    position: relative;
+  }
+}

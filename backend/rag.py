@@ -85,14 +85,16 @@ def retrieve_context(book_id: str, question: str, k: int = 5) -> List[str]:
     if collection.count() == 0:
         index_book(book_id)
 
+    # Frage embedden und per Embedding suchen (robust ohne Chroma embedding_function)
+    q_emb = _embedding_model.encode([question]).tolist()
+
     results = collection.query(
-        query_texts=[question],
+        query_embeddings=q_emb,
         n_results=k,
+        include=["documents"],
     )
 
-    # Chroma gibt eine Liste von Listen zurück
-    documents = results["documents"][0]
-    return documents
+    return results["documents"][0]
 
 
 def get_all_chunks(book_id: str) -> List[str]:
