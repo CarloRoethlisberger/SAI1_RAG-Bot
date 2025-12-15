@@ -4,7 +4,9 @@
   
 This project combines **Project Gutenberg** texts with an **AI Reading Assistant** that can **summarize**, **answer questions grounded in the book (RAG)**, and **generate quizzes**.
 
-Please be aware that this is a prototype and thus not yet dockerized or hosted. You will need to clone the repo and start it manually. 
+Please be aware that this is a prototype and thus not yet dockerized or hosted. You will need to clone the repo and start the application manually. 
+
+Further, the Application currently only supports the UI in German. 
 
 ---
 
@@ -40,31 +42,41 @@ Please be aware that this is a prototype and thus not yet dockerized or hosted. 
 - Simple card-based UI
 - Sidebar explaining Project Gutenberg + RAG
 
+---
+
 ### How to start up the prototype
 
-Pre-Reqs:
-- Git
-- Python 3.11
+**Pre-Reqs:**
+- Git (CMD: winget install --id Git.Git)
+- Python 3.11 (add to Path!)
 
-PS:
+**Backend**
+
+Terminal (PS):
 1. git clone https://github.com/CarloRoethlisberger/SAI1_RAG-Bot.git
 
 2. cd SAI1_RAG-Bot
 3. cd backend
 4. python -m venv venv
-5. venv\Scripts\Activate.ps1
-6. Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
-7. venv\Scripts\Activate.ps1
-8. pip install --upgrade pip
-9. pip install fastapi uvicorn "uvicorn[standard]" chromadb sentence-transformers openai httpx python-dotenv
+5. Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+6. venv\Scripts\Activate.ps1
+7. python.exe -m pip install --upgrade pip
+8. pip install fastapi uvicorn "uvicorn[standard]" chromadb sentence-transformers openai httpx python-dotenv
+9. pip install python-multipart
 
-OPENAI_API_KEY=your_key_here
+11. In the Root of the project, cerate a new file ".env"
+12. Copy past the the OpenAI API key from our report and save the .env file
 
-From the Backend Folder: 
-python -m uvicorn main:app --reload
+OPENAI_API_KEY=[Your_Key]
 
-The backend is now running. Now switch to the frontend directory. 
+(Not uploading the .env/API key is best practice)
 
-1. npm install
-2. npm run dev
-3. Visit the displayed localhost URL in the browser
+13. python -m uvicorn main:app --reload
+
+The backend is now running. Now open a new terminal and do not close the current terminal. 
+
+**Frontend**
+2. cd frontend
+3. npm install
+4. npm run dev
+5. Visit the displayed localhost URL in the browser
